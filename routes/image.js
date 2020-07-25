@@ -161,7 +161,7 @@ async function resize_image(filename, height, width){
 
 // Crop Image
 async function crop_image(filename, height, width){
-    await new Jimp(upload_path + filename, function (err, image) {
+    await new Jimp(upload_path + filename , function (err, image) {
         let w = image.bitmap.width //  width of the image
         let h = image.bitmap.height // height of the image
 

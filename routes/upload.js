@@ -11,6 +11,7 @@ const connection_string = encodeURI('mongodb://localhost:27017/')
 
 // Path Setup
 const staging_upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/staging/"
+const staging_resize_upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/staging/resize/"
 const upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/"
 
 
@@ -69,7 +70,7 @@ router.post('/', async (req, res) => {
             await change_image(filename)
 
             let data = {
-                _id : filename.substring(0,filename.length-4),
+                _id : filename,
                 path: upload_path + filename,
                 tag : tag
             }

@@ -1,6 +1,7 @@
 const express = require('express')
 const mongodb = require('mongodb')
 const fs = require('fs');
+let path = require('path')
 let Jimp = require('jimp')
 
 

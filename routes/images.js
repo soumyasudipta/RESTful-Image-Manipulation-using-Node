@@ -1,11 +1,14 @@
 const express = require('express');
 const mongodb = require('mongodb');
 
+
 // Init Router
 const router = express.Router();
 
+
 // Connection String for MongoDB
 const connection_string = encodeURI('mongodb://localhost:27017/')
+
 
 // Get Methods
 router.get('/:tag', async (req, res) => {
@@ -16,6 +19,7 @@ router.get('/:tag', async (req, res) => {
     res.send(await images.find({tag: tag},{ projection:{_id:1, path:1, tag:1}}).toArray())
 
 })
+
 
 // Load Image from Database
 async function loadImage(){

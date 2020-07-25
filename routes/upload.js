@@ -4,15 +4,19 @@ const multer = require('multer')
 let path = require('path')
 let Jimp = require('jimp');
 
+
 // Connection String for MongoDB
 const connection_string = encodeURI('mongodb://localhost:27017/')
+
 
 // Path Setup
 const staging_upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/staging/"
 const upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/"
 
+
 // Init Router
 const router = express.Router()
+
 
 // Set Storage Engine
 const storage = multer.diskStorage({
@@ -21,6 +25,7 @@ const storage = multer.diskStorage({
         cb(null, 'image-' + Date.now() + path.extname(file.originalname))
     }
 })
+
 
 // Init Upload
 const upload_image = multer({
@@ -41,46 +46,51 @@ const upload_image = multer({
     }
 }).single('uploadimage')
 
+
 // Get Methods
 router.get('/', async (req, res) => {
-
     res.render('pages/upload')
-
 })
+
 
 // Post Methods
 router.post('/', async (req, res) => {
 
-    upload_image(req, res, (err) => {
+    upload_image(req, res, async (err) => {
+
+        let filename = req.file.filename
+        let tag = req.body.tag
+
         if(err){
             res.render('pages/upload', {
                 msg: err
             })
         } else {
-            insertImage("upload", req.file.filename, req.body.tag)
-            change_image(req.file.filename)
-            res.send(JSON.stringify({
-                _id: req.file.filename,
-                path: upload_path + req.file.filename,
-                tag: req.body.tag                      
-            }))
+            await change_image(filename)
+
+            let data = {
+                _id : filename.substring(0,filename.length-4),
+                path: upload_path + filename,
+                tag : tag
+            }
+
+            await insertImage("upload", data)
+            
+            res.send(data)
         }
     })
-    
+
 })
 
-// Insert image into mongodb
-async function insertImage(collection, filename, tag){
+
+/*
+    Database Methods
+*/
+async function insertImage(collection, data){
     const client = await mongodb.MongoClient.connect(connection_string, {
         useUnifiedTopology: true,
         useNewUrlParser: true
     });
-
-    let data = {
-        _id : filename,
-        path: upload_path + filename,
-        tag : tag
-    }
 
     client.db('air').collection(collection).insertOne(data, function(err, res) {
         if (err) throw err;
@@ -88,7 +98,10 @@ async function insertImage(collection, filename, tag){
     });
 }
 
-// Change image according to said dimensions
+
+/*
+    Image Manipulation Methods
+*/
 async function change_image(filename){
 
     // Resize Image
@@ -132,7 +145,6 @@ async function change_image(filename){
             .catch(err => {
                 console.error(err)
             })
-    
     })
 }
 

@@ -3,29 +3,34 @@ const mongodb = require('mongodb')
 const fs = require('fs');
 let Jimp = require('jimp')
 
+
 // Init Router
 const router = express.Router()
 
+
 // Connection String for MongoDB
 const connection_string = encodeURI('mongodb://localhost:27017/')
+
 
 // Path Setup
 const upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/"
 const resize_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/resize/"
 const crop_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/crop/"
 
+
 // Get Methods
 router.get('/:id/resize', async (req, res) => {
 
     let height = req.query.height
     let width = req.query.width
+    let id = req.params.id
 
     const images = await loadImage()
-    
-    if(await images.find({_id:upload_path + req.params.id},{ projection:{_id:1}}).toArray().length > 0){
-        await resize_image(req.params.id, height, width)
+
+    if((await images.find({ _id:id },{_id:1}).toArray()).length > 0){
+        await resize_image(id, height, width)
         res.send(JSON.stringify({
-            _id: resize_path + req.params.id,                    
+            resizep_image_path: resize_path + id,                    
         }))
     } else {
         res.send("Check Image Id")
@@ -36,46 +41,62 @@ router.get('/:id/resize', async (req, res) => {
 router.get('/:id/crop', async (req, res) => {
     let height = req.query.height
     let width = req.query.width
+    let id = req.params.id
 
     const images = await loadImage()
     
-    if(await images.find({_id:upload_path + req.params.id},{ projection:{_id:1}}).toArray().length > 0){
-        await crop_image(req.params.id, height, width)
+    if((await images.find({ _id:id },{ projection:{ _id:1 }}).toArray()).length > 0){
+        await crop_image(id, height, width)
         res.send(JSON.stringify({
-            _id: crop_path + req.params.id,                    
+            crop_image_path: crop_path + id,                    
         }))
     } else {
         res.send("Check Image Id")
     }
 })
 
+
 // Put Methods
 router.put('/:id', async (req, res) => {
     let tag = req.query.tag
+    let id = req.params.id
     
-    if(await updateImage(tag, req.params.id) == true){
+    const images = await loadImage()
+
+    if((await images.find({ _id:id },{ projection:{ _id:1 }}).toArray()).length > 0){
+        await updateImage(tag, id)
         res.send("Tag Updated")
     } else {
         res.send("Check Image Id")
     }
+
 })
+
 
 // Delete Methods
 router.delete('/:id', async (req, res) => {
 
-    if(await deleteImage(req.params.id) == true){
+    let id = req.params.id
+    
+    const images = await loadImage()
 
-        fs.unlink(upload_path + req.params.id, (err) => {
+    if((await images.find({ _id:id },{ projection:{ _id:1 }}).toArray()).length > 0){
+        await deleteImage(id)
+        fs.unlink(upload_path + id, (err) => {
             if (err) throw err;
-            console.log('successfully deleted ' + req.params.id)
+            console.log('Successfully deleted image ' + id)
         })
-
         res.send("Image Deleted")
     } else {
         res.send("Check Image Id")
     }
+
 })
 
+
+/*
+    Database Methods
+*/
 // Load Image from Database
 async function loadImage(){
     const client = await mongodb.MongoClient.connect(connection_string, {
@@ -88,8 +109,6 @@ async function loadImage(){
 
 // Update Image Tag
 async function updateImage(tag, id){
-    let flag = false
-
     const client = await mongodb.MongoClient.connect(connection_string, {
         useUnifiedTopology: true,
         useNewUrlParser: true
@@ -98,16 +117,15 @@ async function updateImage(tag, id){
     await client.db('air').collection("upload").updateOne(
         {_id: id},
         {$set: {tag: tag}}
-    ,function(err, res) {
+    , function(err, res) {
         if (err) throw err
 
         if(res.result.nModified > 0){
             console.log("Document Updated")
         } else {
-            console.log("Check Image Id")
+            console.log("Same Tagname")
         }
     })
-
 }
 
 // Delete Image from Database
@@ -124,14 +142,17 @@ async function deleteImage(id){
     return true
 }
 
-// Resize Image
-async function resize_image(file_name, height, width){
 
-    await Jimp.read(upload_path + file_name)
+/*
+    Image Manipulation Methods
+*/
+// Resize Image
+async function resize_image(filename, height, width){
+    await Jimp.read(upload_path + filename)
         .then(lenna => {
         return lenna
             .resize(parseInt(width), parseInt(height)) // resize
-            .write(resize_path + file_name) // save
+            .write(resize_path + filename) // save
         })
         .catch(err => {
             console.error(err)
@@ -139,20 +160,19 @@ async function resize_image(file_name, height, width){
 }
 
 // Crop Image
-async function crop_image(file_name, height, width){
-
-    await new Jimp(upload_path + file_name, function (err, image) {
+async function crop_image(filename, height, width){
+    await new Jimp(upload_path + filename, function (err, image) {
         let w = image.bitmap.width //  width of the image
         let h = image.bitmap.height // height of the image
 
         let crop_x = w/2 - width/2 // x coordinate of crop
         let crop_y = h/2 - height/2 // y coordinate of crop
 
-        Jimp.read(upload_path + file_name)
+        Jimp.read(upload_path + filename)
             .then(lenna => {
             return lenna
                 .crop(crop_x, crop_y, parseInt(width), parseInt(height)) // resize
-                .write(crop_path + file_name) // save
+                .write(crop_path + filename) // save
             })
             .catch(err => {
                 console.error(err)

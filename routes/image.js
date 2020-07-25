@@ -14,11 +14,10 @@ const connection_string = encodeURI('mongodb://localhost:27017/')
 
 
 // Path Setup
-const userName = process.env['USERPROFILE'].split(path.sep)[2]
-
-const upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/`
-const resize_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/resize/`
-const crop_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/crop/`
+const base_path = process.cwd().split("\\").join("/")
+const upload_path = base_path + '/public/uploads/'
+const resize_path = base_path + '/public/uploads/resize/'
+const crop_path = base_path + '/public/uploads/crop/'
 
 
 // Get Methods
@@ -152,8 +151,8 @@ async function deleteImage(id){
 // Resize Image
 async function resize_image(filename, height, width){
     await Jimp.read(upload_path + filename)
-        .then(lenna => {
-        return lenna
+        .then(file => {
+        return file
             .resize(parseInt(width), parseInt(height)) // resize
             .write(resize_path + filename) // save
         })
@@ -172,8 +171,8 @@ async function crop_image(filename, height, width){
         let crop_y = h/2 - height/2 // y coordinate of crop
 
         Jimp.read(upload_path + filename)
-            .then(lenna => {
-            return lenna
+            .then(file => {
+            return file
                 .crop(crop_x, crop_y, parseInt(width), parseInt(height)) // resize
                 .write(crop_path + filename) // save
             })

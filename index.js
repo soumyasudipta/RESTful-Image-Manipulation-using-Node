@@ -28,7 +28,7 @@ app.use('/upload', upload)
 app.use('/image', image)
 app.use('/images', images)
 
-// Server Check
+// Home Page
 app.get('/', (req, res) => res.render('pages/index'))
 
 app.listen(port, () => console.log(`Listening at http://localhost:${port}`))

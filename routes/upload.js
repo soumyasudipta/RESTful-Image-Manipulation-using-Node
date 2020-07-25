@@ -4,16 +4,15 @@ const multer = require('multer')
 let path = require('path')
 let Jimp = require('jimp');
 
-
 // Connection String for MongoDB
 const connection_string = encodeURI('mongodb://localhost:27017/')
 
 
 // Path Setup
-const userName = process.env['USERPROFILE'].split(path.sep)[2]
-
-const staging_upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/staging/`
-const upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/`
+const base_path = process.cwd().split("\\").join("/")
+const staging1_path = base_path + '/public/uploads/staging/resize/'
+const staging2_path = base_path + '/public/uploads/staging/crop/'
+const upload_path = base_path + '/public/uploads/'
 
 
 // Init Router
@@ -22,9 +21,9 @@ const router = express.Router()
 
 // Set Storage Engine
 const storage = multer.diskStorage({
-    destination: staging_upload_path,
+    destination: staging1_path,
     filename: function(req, file, cb){
-        cb(null, 'image-' + Date.now() + path.extname(file.originalname))
+        cb(null, 'image-' + Math.floor(Date.now()/1000) + path.extname(file.originalname))
     }
 })
 
@@ -51,13 +50,17 @@ const upload_image = multer({
 
 // Get Methods
 router.get('/', async (req, res) => {
-    res.render('pages/upload')
+
+    let images = await loadImage()
+    let data = await images.find({},{ projection:{_id:1, path:1, tag:1}}).toArray()
+    res.render('pages/upload',{
+        data: data
+    })
 })
 
 
 // Post Methods
 router.post('/', async (req, res) => {
-
     upload_image(req, res, async (err) => {
 
         let filename = req.file.filename
@@ -68,86 +71,76 @@ router.post('/', async (req, res) => {
                 msg: err
             })
         } else {
-            await change_image(filename)
+            await manipulate_image(filename)
+            await insertImage(filename, tag)
 
-            let data = {
-                _id : filename,
-                path: upload_path + filename,
-                tag : tag
-            }
+            let images = await loadImage()
+            let data = await images.find({},{ projection:{_id:1, path:1, tag:1}}).toArray()
 
-            await insertImage("upload", data)
-            
-            res.send(data)
+            res.render('pages/upload',{
+                msg: "Image Uploaded",
+                data: data
+            })
         }
     })
-
 })
 
 
 /*
     Database Methods
 */
-async function insertImage(collection, data){
+// Insert into Database
+async function insertImage(filename, tag){
     const client = await mongodb.MongoClient.connect(connection_string, {
         useUnifiedTopology: true,
         useNewUrlParser: true
     });
 
-    client.db('air').collection(collection).insertOne(data, function(err, res) {
+    let data = {
+        _id : filename,
+        path: upload_path + filename,
+        tag : tag
+    }
+
+    client.db('air').collection("upload").insertOne(data, function(err, res) {
         if (err) throw err;
         console.log("Inserted Succesfully")
     });
+}
+
+// Load Image from Database
+async function loadImage(){
+    const client = await mongodb.MongoClient.connect(connection_string, {
+        useUnifiedTopology: true,
+        useNewUrlParser: true
+    })
+
+    return client.db('air').collection("upload")
 }
 
 
 /*
     Image Manipulation Methods
 */
-async function change_image(filename){
+async function manipulate_image(filename){
 
-    // Resize Image
-    await new Jimp(staging_upload_path + filename, function (err, image) {
-        let w = image.bitmap.width //  width of the image
-        let h = image.bitmap.height // height of the image
+    // Stage1 Resize Image while maintaining aspect ratio
+    const stage1 = await Jimp.read(staging1_path + filename)
 
-        if(w > h){
-            Jimp.read(staging_upload_path + filename, (err, lenna) => {
-                if (err) throw err
-                lenna
-                    .resize(800, Jimp.AUTO) // resize
-                    .write(staging_upload_path + filename) // save
-                })
-        } else {
-            Jimp.read(staging_upload_path + filename, (err, lenna) => {
-                if (err) throw err
-                lenna
-                    .resize(Jimp.AUTO, 800) // resize
-                    .write(staging_upload_path + filename) // save
-                })
-        }
-    })
+    if(stage1.bitmap.width > stage1.bitmap.height) {
+        await stage1.resize(800, Jimp.AUTO).write(staging2_path + filename)
+    } else {
+        await stage1.resize(Jimp.AUTO, 800).write(staging2_path + filename)
+    }
 
-    // Crop and Compress
-    await new Jimp(staging_upload_path + filename, function (err, image) {
-        let w = image.bitmap.width //  width of the image
-        let h = image.bitmap.height // height of the image
+    // Stage2 Crop and Compress Image
+    const stage2 = await Jimp.read(staging2_path + filename)
 
-        let crop_x = w/2 - 300/2 // x coordinate of crop
-        let crop_y = h/2 - 300/2 // y coordinate of crop
+    let crop_x = stage2.bitmap.width/2 - 150 // x coordinate of crop
+    let crop_y = stage2.bitmap.height/2 - 150 // y coordinate of crop
 
+    await stage2.crop(crop_x, crop_y, 300, 300).write(upload_path + filename)
 
-        Jimp.read(staging_upload_path + filename)
-            .then(lenna => {
-            return lenna
-                .crop(crop_x, crop_y, 300, 300) // resize
-                .quality(75) // compress
-                .write(upload_path + filename) // save
-            })
-            .catch(err => {
-                console.error(err)
-            })
-    })
 }
 
 module.exports = router

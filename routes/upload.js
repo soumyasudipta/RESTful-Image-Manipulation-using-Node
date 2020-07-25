@@ -10,9 +10,10 @@ const connection_string = encodeURI('mongodb://localhost:27017/')
 
 
 // Path Setup
-const staging_upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/staging/"
-const staging_resize_upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/staging/resize/"
-const upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/"
+const userName = process.env['USERPROFILE'].split(path.sep)[2]
+
+const staging_upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/staging/`
+const upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/`
 
 
 // Init Router

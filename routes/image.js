@@ -13,9 +13,11 @@ const connection_string = encodeURI('mongodb://localhost:27017/')
 
 
 // Path Setup
-const upload_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/"
-const resize_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/resize/"
-const crop_path = "C:/Users/soumy/Documents/GitHub/AIR-Internship/public/uploads/crop/"
+const userName = process.env['USERPROFILE'].split(path.sep)[2]
+
+const upload_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/`
+const resize_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/resize/`
+const crop_path = `C:/Users/${userName}/Documents/GitHub/AIR-Internship/public/uploads/crop/`
 
 
 // Get Methods

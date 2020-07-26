@@ -4,40 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <title>AIR</title>
 </head>
 
 <body>
 
-<div class="container">
-    <h2>File Upload</h2>
-
-    <%= typeof msg != 'undefined' ? msg : '' %>
-
-    <form action="/upload" method="POST" enctype="multipart/form-data">
-
-        <input type="file" name="uploadimage" class="input-field"  >
- 
-        <input type="text" name="tag" placeholder="Tag" class="input-field"></textarea> 
-        
-        <button type="submit" class="waves-effect waves-light btn">Upload</button>
-        
-    </form>
-
-    <h3>Browse through the Photos</h3>
-
-    <div class="row">
-        <% for(var i=0; i<data.length; i++) {%>
-        <div class="col s6">   
-            <img src=<%=`uploads/${data[i]._id}`%> >
-            <p>Image ID: <%= data[i]._id %></p>
-            <p>Image Path: <%= data[i].path %></p>                
-        </div>
-        <% } %>      
+<nav class="center-align">
+    <div class="nav-wrapper grey darken-4">
+        <a href="#" class="brand-logo">Image Library</a>
     </div>
+</nav>
+
+<div class="container">
+
+    <!-- <h2 class="center-align">Image Library</h2> -->
+
+    <div class="card-panel">
+        <h4 class="center-align"> File Upload </h4>
+
+        <% if(typeof msg != 'undefined' ? msg : '') { %> 
+            <div class="card-panel teal lighten-2">
+                <%= msg %> 
+            </div>
+        <% } %> 
+
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+            <div class="row">
+                <div class="col s4 center-align">
+                    <input type="file" name="uploadimage" class="input-field"  >
+                </div>
+
+                <div class="col s4 center-align">
+                    <input type="text" name="tag" placeholder="Tag" class="input-field">
+                </div>
+                
+                <div class="col s4 center-align">
+                    <button type="submit" class="waves-effect waves-light btn">Upload</button>
+                </div>
+            </div>   
+        </form>
+    </div>
+    
+    <div class="card-panel">
+        <h4 class="center-align">Browse through the Photos</h4>
+
+        <form action="/upload/browse" method="POST">
+            <div class="row">
+                <div class="col s10 center-align">
+                    <input type="text" name="tag" placeholder="Tag" class="input-field">
+                </div>
+                
+                <div class="col s2 center-align">
+                    <button type="submit" class="waves-effect waves-light btn">Search</button>
+                </div>
+            </div>   
+        </form>
+
+        <div class="row">
+            <% for(var i=0; i<data.length; i++) {%>
+            <div class="col s4">
+                <div class="card">
+                    <div class="card-content">
+                        <span class="card-title"><%= data[i]._id %></span>
+                        <img src=<%=`../uploads/${data[i]._id}`%> width="100%" height="100%">
+                        <p>Tag: <%= data[i].tag %></p> 
+                    </div>
+                    <div class="card-action">
+                        <div class="row">
+                            <div class="col s6">
+                                <input type="number" id=<%= `height-${data[i]._id}` %> placeholder="Height" class="input-field">
+                            </div>
+                            <div class="col s6">
+                                <input type="number" id=<%= `width-${data[i]._id}` %> placeholder="Width" class="input-field">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col s6">
+                                <button class="waves-effect waves-light btn" onclick=<%= `resize("${data[i]._id}")`%>>Resize</button>
+                            </div>
+                            <div class="col s6">
+                                <button class="waves-effect waves-light btn" onclick=<%= `crop("${data[i]._id}")`%>>Crop</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-action">
+                        <div class="row">
+                            <div class="col s6">
+                                <input type="text" id=<%= `new-tag-${data[i]._id}` %>  placeholder="Tag Name" class="input-field">
+                            </div>
+                            <div class="col s6">
+                                <button class="waves-effect waves-light btn" onclick=<%= `tag_change("${data[i]._id}")`%>>Change Tag</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-action center-align">
+                        <button type="button" class="waves-effect waves-light red btn lighten-2" value="Delete"onclick=<%= `delete_image("${data[i]._id}")`%> >DELETE</button>
+                    </div>   
+                </div>   
+            </div>
+            <% } %>      
+        </div>
+    </div>
+    
 </div>
 
+<script>
+    function crop(id) {
+        let height = Math.floor(parseInt(document.getElementById("height-"+id).value.toString()))
+        let width = Math.floor(parseInt(document.getElementById("width-"+id).value.toString()))
 
+        $.ajax({
+            type: "GET",
+            url: "/image/"+id+"/crop?height="+height+"&width="+width,
+            // data: "name=someValue",
+            success: function(msg){
+                let file = JSON.parse(msg)
+                window.open(file.crop_image_path,'_blank')
+            }
+        })
+    }
+
+    function resize(id) {
+        let height = Math.floor(parseInt(document.getElementById("height-"+id).value.toString()))
+        let width = Math.floor(parseInt(document.getElementById("width-"+id).value.toString()))
+
+        $.ajax({
+            type: "GET",
+            url: "/image/"+id+"/resize?height="+height+"&width="+width,
+            // data: "name=someValue",
+            success: function(msg){
+                let file = JSON.parse(msg)
+                window.open(file.resize_image_path,'_blank')
+            }
+        })
+
+    }
+
+    function tag_change(id) {
+        let new_tag = document.getElementById("new-tag-"+id).value.toString()
+
+        $.ajax({
+            type: "PUT",
+            url: "/image/"+id+"?tag="+new_tag,
+            // data: "name=someValue",
+            success: function(msg){
+                alert(msg);
+                window.open('/upload')
+            }
+        })
+    }
+
+    function delete_image(id) {
+        $.ajax({
+            type: "DELETE",
+            url: "/image/"+id,
+            // data: "name=someValue",
+            success: function(msg){
+                alert(msg)
+            }
+        })
+    }
+
+</script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>

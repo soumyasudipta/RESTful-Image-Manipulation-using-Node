@@ -1,6 +1,7 @@
 const express = require('express')
 const mongodb = require('mongodb')
 const multer = require('multer')
+const fetch = require('node-fetch')
 let path = require('path')
 let Jimp = require('jimp');
 
@@ -78,11 +79,27 @@ router.post('/', async (req, res) => {
             let data = await images.find({},{ projection:{_id:1, path:1, tag:1}}).toArray()
 
             res.render('pages/upload',{
-                msg: "Image Uploaded",
+                msg: "Image Uploaded, Please note the image ID: " + filename,
                 data: data
             })
         }
     })
+})
+
+router.post('/browse', async(req, res) => {
+    let tag = req.body.tag
+
+    if(tag.length > 0){
+        let response = await (await fetch('http://localhost:3000/images/' + tag)).json()
+
+        res.render('pages/upload',{
+            data: response
+        })
+    }
+    else {
+        res.redirect('/upload/')
+    }
+
 })
 
 

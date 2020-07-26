@@ -32,7 +32,7 @@ router.get('/:id/resize', async (req, res) => {
     if((await images.find({ _id:id },{_id:1}).toArray()).length > 0){
         await resize_image(id, height, width)
         res.send(JSON.stringify({
-            resizep_image_path: resize_path + id,                    
+            resize_image_path: '/uploads/resize/' + id,                    
         }))
     } else {
         res.send("Check Image Id")
@@ -50,7 +50,7 @@ router.get('/:id/crop', async (req, res) => {
     if((await images.find({ _id:id },{ projection:{ _id:1 }}).toArray()).length > 0){
         await crop_image(id, height, width)
         res.send(JSON.stringify({
-            crop_image_path: crop_path + id,                    
+            crop_image_path: '/uploads/crop/' + id,                    
         }))
     } else {
         res.send("Check Image Id")
@@ -150,36 +150,26 @@ async function deleteImage(id){
 */
 // Resize Image
 async function resize_image(filename, height, width){
-    await Jimp.read(upload_path + filename)
-        .then(file => {
-        return file
-            .resize(parseInt(width), parseInt(height)) // resize
-            .write(resize_path + filename) // save
-        })
-        .catch(err => {
-            console.error(err)
-        })
+
+    const image = await Jimp.read(upload_path + filename)
+    
+    await image.resize(parseInt(width), parseInt(height)).write(resize_path + filename)
+
 }
 
 // Crop Image
 async function crop_image(filename, height, width){
-    await new Jimp(upload_path + filename , function (err, image) {
-        let w = image.bitmap.width //  width of the image
-        let h = image.bitmap.height // height of the image
 
-        let crop_x = w/2 - width/2 // x coordinate of crop
-        let crop_y = h/2 - height/2 // y coordinate of crop
+    const image = await Jimp.read(upload_path + filename)
 
-        Jimp.read(upload_path + filename)
-            .then(file => {
-            return file
-                .crop(crop_x, crop_y, parseInt(width), parseInt(height)) // resize
-                .write(crop_path + filename) // save
-            })
-            .catch(err => {
-                console.error(err)
-            })
-    })
+    let w = image.bitmap.width //  width of the image
+    let h = image.bitmap.height // height of the image
+
+    let crop_x = w/2 - width/2 // x coordinate of crop
+    let crop_y = h/2 - height/2 // y coordinate of crop
+
+    await image.crop(crop_x, crop_y, parseInt(width), parseInt(height)).write(crop_path + filename)
+
 }
 
 module.exports = router

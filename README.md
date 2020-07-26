@@ -41,12 +41,20 @@ After the database has been created go to the previous command prompt and type:
 ```
 node index.js
 ```
-Now the setup is complete.
+Now the setup is complete and the server has started.
 
 
 ## Running the tests
-Now all the REST API calls can be made to the server.
 
+### Website
+
+It is a simple web UI where all the REST API operations can be done very easily.
+Individual operation available in the web UI carries out API requests to the server and displays output. 
+```
+localhost:3000/upload
+```
+
+Supported REST API methods.
 ### POST /upload - 
 This method accepts an image and a tag. The image has to be resized to 800 x 800 in pixels (at least one
 of the height or width has to be 800px, the other has to be less than or equal to 800px) while maintaining the aspect ratio.
@@ -58,18 +66,18 @@ save the returned ID as it'll be used in subsequent requests.
 
 ### GET supports the following operations:
 ```
-image/:id/resize?height={value}&width={value} - returns a resized image with appropriate dimensions.
+localhost:3000/image/:id/resize?height={value}&width={value} - returns a resized image with appropriate dimensions.
 
-image/:id/crop?height={value}&width={value} - returns a cropped image with appropriate dimensions.
+localhost:3000/image/:id/crop?height={value}&width={value} - returns a cropped image with appropriate dimensions.
 
-images/:tag - returns a list of images having the specified tag
+localhost:3000/images/:tag - returns a list of images having the specified tag
 ```
 
 ### PUT 
 ``` 
-/image/:id?tag={new-tag} - Updates the tag of the specified image to new-tag.
+localhost:3000/image/:id?tag={new-tag} - Updates the tag of the specified image to new-tag.
 ```
 ### DELETE 
 ```
-/image/:id - Deletes the specified image from the database.
+localhost:3000/image/:id - Deletes the specified image from the database.
 ```

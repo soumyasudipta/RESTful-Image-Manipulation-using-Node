@@ -1,4 +1,4 @@
-# AIR-Internship
+# RESTful Image Manipulation using NodeJS
 
 A minimal RESTful Image Manipulation API Server to manipulate images based on api requests.
 
